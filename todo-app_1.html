@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>할일</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="할일">
+  <meta name="theme-color" content="#4f46e5">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root{
+      --pri:#4f46e5;
+      --pri-l:#ede9fe;
+      --pri-d:#3730a3;
+      --bg:#f5f5f7;
+      --sf:#ffffff;
+      --bd:#e5e7eb;
+      --tx:#111827;
+      --tx2:#6b7280;
+      --hi:#ef4444;
+      --md:#f59e0b;
+      --lo:#9ca3af;
+      --hi-bg:#fef2f2;
+      --md-bg:#fffbeb;
+      --lo-bg:#f9fafb;
+      --sw:250px;
+      --bn:60px;
+      --r:14px;
+      --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+      --sh2:0 4px 16px rgba(0,0,0,.12);
+    }
+
+    @media(prefers-color-scheme:dark){
+      :root{
+        --bg:#0f0f14;
+        --sf:#1c1c24;
+        --bd:#2d2d3a;
+        --tx:#f0f0fa;
+        --tx2:#6b7280;
+        --pri-l:#1e1b4b;
+        --hi-bg:#2d1515;
+        --md-bg:#2d2000;
+        --lo-bg:#1c1c24;
+      }
+    }
+
+    html,body{height:100%;overflow:hidden}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+      background:var(--bg);color:var(--tx);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* ───────── LAYOUT ───────── */
+    #app{display:flex;height:100dvh}
+
+    .sidebar{
+      width:var(--sw);flex-shrink:0;
+      background:var(--sf);border-right:1px solid var(--bd);
+      display:flex;flex-direction:column;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      padding:0 0 24px;
+    }
+
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+    /* ───────── SIDEBAR ───────── */
+    .sb-head{padding:20px 16px 12px}
+    .sb-logo{font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--pri);display:flex;align-items:center;gap:8px}
+
+    .user-card{
+      margin:6px 10px;padding:10px 12px;
+      background:var(--bg);border-radius:10px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .u-avatar{
+      width:30px;height:30px;border-radius:50%;
+      background:var(--pri);color:#fff;font-weight:700;font-size:13px;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .u-name{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .u-out{font-size:12px;color:var(--tx2);cursor:pointer;padding:2px 6px;border-radius:6px;border:1px solid var(--bd);background:var(--sf);white-space:nowrap}
+    .u-out:hover{color:var(--hi)}
+
+    .sb-section{padding:16px 10px 4px}
+    .sb-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);padding:0 8px 6px}
+
+    .nav-item{
+      display:flex;align-items:center;gap:9px;
+      padding:9px 12px;border-radius:10px;
+      cursor:pointer;font-size:14px;font-weight:500;color:var(--tx);
+      transition:background .12s;user-select:none;
+    }
+    .nav-item:hover{background:var(--bg)}
+    .nav-item.active{background:var(--pri-l);color:var(--pri);font-weight:700}
+
+    .nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+
+    .nb{
+      margin-left:auto;background:var(--pri);color:#fff;
+      font-size:10px;font-weight:800;
+      padding:1px 6px;border-radius:999px;min-width:18px;text-align:center;
+    }
+    .nav-item.active .nb{background:var(--pri)}
+
+    .cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+    .add-cat-btn{
+      display:flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:10px;
+      cursor:pointer;font-size:13px;color:var(--tx2);
+      background:none;border:none;width:100%;text-align:left;
+      transition:all .12s;
+    }
+    .add-cat-btn:hover{color:var(--pri);background:var(--bg)}
+
+    /* ───────── MAIN HEADER ───────── */
+    .topbar{padding:20px 22px 0;background:var(--bg)}
+    .tb-title{font-size:28px;font-weight:800;letter-spacing:-.5px}
+    .tb-date{font-size:13px;color:var(--tx2);margin-top:3px}
+
+    .search-wrap{
+      margin-top:14px;display:flex;align-items:center;gap:8px;
+      background:var(--sf);border:1px solid var(--bd);border-radius:11px;
+      padding:10px 14px;box-shadow:var(--sh);
+    }
+    .search-wrap input{
+      flex:1;border:none;outline:none;font-size:14px;
+      background:transparent;color:var(--tx);font-family:inherit;
+    }
+    .search-wrap input::placeholder{color:var(--tx2)}
+
+    .filter-row{
+      display:flex;gap:6px;padding:12px 22px 0;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+    }
+    .filter-row::-webkit-scrollbar{display:none}
+
+    .chip{
+      padding:5px 13px;border-radius:999px;
+      border:1px solid var(--bd);background:var(--sf);
+      font-size:12px;font-weight:600;cursor:pointer;
+      white-space:nowrap;color:var(--tx2);transition:all .12s;
+      box-shadow:var(--sh);
+    }
+    .chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+
+    /* ───────── TODO LIST ───────── */
+    .todo-list{
+      flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      padding:12px 22px 90px;
+    }
+
+    .sec-head{
+      font-size:11px;font-weight:700;color:var(--tx2);letter-spacing:.05em;
+      display:flex;align-items:center;gap:8px;
+      padding:12px 0 6px;
+    }
+    .sec-line{flex:1;height:1px;background:var(--bd)}
+
+    .todo-card{
+      display:flex;align-items:flex-start;gap:11px;
+      padding:13px 14px 13px 18px;
+      background:var(--sf);border:1px solid var(--bd);
+      border-radius:var(--r);margin-bottom:7px;
+      cursor:pointer;transition:border-color .15s,box-shadow .15s;
+      position:relative;overflow:hidden;box-shadow:var(--sh);
+    }
+    .todo-card:hover{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-l)}
+    .todo-card.done{opacity:.45}
+
+    .pbar{
+      position:absolute;left:0;top:0;bottom:0;width:4px;
+      border-radius:var(--r) 0 0 var(--r);
+    }
+    .p-high .pbar{background:var(--hi)}
+    .p-med .pbar{background:var(--md)}
+    .p-low .pbar{background:var(--lo)}
+
+    .chk{
+      width:20px;height:20px;border-radius:50%;
+      border:2px solid var(--bd);flex-shrink:0;margin-top:1px;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .15s;cursor:pointer;
+    }
+    .chk:hover{border-color:var(--pri)}
+    .chk.on{background:var(--pri);border-color:var(--pri)}
+    .chk.on::after{content:'✓';color:#fff;font-size:11px;font-weight:800}
+
+    .card-body{flex:1;min-width:0}
+    .card-title{font-size:15px;font-weight:600;line-height:1.4;color:var(--tx)}
+    .done .card-title{text-decoration:line-through;color:var(--tx2)}
+
+    .card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center}
+
+    .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+    .tag-cat{background:var(--pri-l);color:var(--pri)}
+    .tag-hi{background:var(--hi-bg);color:var(--hi)}
+    .tag-md{background:var(--md-bg);color:var(--md)}
+    .tag-lo{background:var(--lo-bg);color:var(--lo)}
+    .tag-date{font-size:11px;font-weight:500;color:var(--tx2);display:flex;align-items:center;gap:3px}
+    .tag-date.over{color:var(--hi);font-weight:700}
+    .tag-date.tod{color:var(--md);font-weight:700}
+
+    /* ───────── FAB ───────── */
+    .fab{
+      position:fixed;bottom:28px;right:24px;
+      width:52px;height:52px;border-radius:50%;
+      background:var(--pri);color:#fff;font-size:26px;
+      border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 20px rgba(79,70,229,.45);
+      transition:transform .15s,box-shadow .15s;z-index:80;line-height:1;
+    }
+    .fab:hover{transform:scale(1.07);box-shadow:0 6px 24px rgba(79,70,229,.55)}
+    .fab:active{transform:scale(.93)}
+
+    /* ───────── BOTTOM NAV ───────── */
+    .bnav{
+      display:none;position:fixed;bottom:0;left:0;right:0;
+      background:var(--sf);border-top:1px solid var(--bd);
+      padding-bottom:env(safe-area-inset-bottom);z-index:70;
+    }
+    .bnav-inner{display:flex;justify-content:space-around}
+    .bn{
+      display:flex;flex-direction:column;align-items:center;
+      gap:2px;padding:8px 12px;cursor:pointer;
+      color:var(--tx2);font-size:10px;font-weight:600;
+      border-radius:8px;transition:color .12s;min-width:54px;
+    }
+    .bn.on{color:var(--pri)}
+    .bn-icon{font-size:20px;line-height:1}
+
+    /* ───────── MODALS ───────── */
+    .overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.45);
+      display:flex;align-items:flex-end;justify-content:center;
+      z-index:200;opacity:0;pointer-events:none;
+      transition:opacity .22s;
+    }
+    .overlay.open{opacity:1;pointer-events:all}
+    @media(min-width:640px){.overlay{align-items:center}}
+
+    .sheet{
+      background:var(--sf);border-radius:22px 22px 0 0;
+      padding:24px 22px;width:100%;max-width:520px;
+      max-height:90dvh;overflow-y:auto;
+      transform:translateY(30px);opacity:0;
+      transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .25s;
+    }
+    @media(min-width:640px){
+      .sheet{border-radius:22px;transform:scale(.96) translateY(0);max-height:85dvh}
+      .overlay.open .sheet{transform:scale(1)}
+    }
+    .overlay.open .sheet{transform:translateY(0);opacity:1}
+
+    .sheet-handle{
+      width:36px;height:4px;background:var(--bd);border-radius:999px;
+      margin:0 auto 20px;
+    }
+    @media(min-width:640px){.sheet-handle{display:none}}
+
+    .sheet-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--tx)}
+
+    .field{margin-bottom:15px}
+    .field label{font-size:12px;font-weight:700;color:var(--tx2);display:block;margin-bottom:6px;letter-spacing:.03em}
+
+    .inp{
+      width:100%;padding:11px 13px;
+      border:1.5px solid var(--bd);border-radius:10px;
+      font-size:15px;color:var(--tx);outline:none;
+      background:var(--bg);font-family:inherit;
+      transition:border-color .15s;
+    }
+    .inp:focus{border-color:var(--pri)}
+    .inp.ta{resize:none;height:72px}
+
+    .pri-row{display:flex;gap:7px}
+    .pri-opt{
+      flex:1;padding:10px 6px;text-align:center;
+      border:2px solid var(--bd);border-radius:10px;
+      cursor:pointer;font-size:13px;font-weight:700;color:var(--tx2);
+      transition:all .13s;
+    }
+    .pri-opt[data-v="high"].s{border-color:var(--hi);background:var(--hi-bg);color:var(--hi)}
+    .pri-opt[data-v="med"].s{border-color:var(--md);background:var(--md-bg);color:var(--md)}
+    .pri-opt[data-v="low"].s{border-color:var(--lo);background:var(--lo-bg);color:var(--lo)}
+
+    .cat-row{display:flex;flex-wrap:wrap;gap:7px}
+    .cat-opt{
+      padding:6px 13px;border:1.5px solid var(--bd);border-radius:999px;
+      cursor:pointer;font-size:13px;font-weight:600;color:var(--tx2);
+      transition:all .13s;
+    }
+    .cat-opt.s{border-color:var(--pri);background:var(--pri-l);color:var(--pri)}
+
+    .btn-row{display:flex;gap:9px;margin-top:22px}
+    .btn{
+      flex:1;padding:13px;border-radius:12px;
+      font-size:15px;font-weight:700;cursor:pointer;border:none;
+      transition:all .13s;font-family:inherit;
+    }
+    .btn-p{background:var(--pri);color:#fff}
+    .btn-p:hover{background:var(--pri-d)}
+    .btn-s{background:var(--bg);color:var(--tx);border:1.5px solid var(--bd)}
+    .btn-d{background:var(--hi-bg);color:var(--hi);border:1.5px solid #fecaca}
+
+    /* ───────── LOGIN / SETUP ───────── */
+    .center-screen{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100dvh;gap:18px;padding:24px;text-align:center;
+    }
+    .cs-icon{font-size:56px}
+    .cs-title{font-size:30px;font-weight:900;letter-spacing:-.5px}
+    .cs-sub{font-size:15px;color:var(--tx2);max-width:300px;line-height:1.6}
+
+    .google-btn{
+      display:flex;align-items:center;gap:12px;
+      padding:14px 26px;background:var(--sf);
+      border:1.5px solid var(--bd);border-radius:13px;
+      font-size:15px;font-weight:700;cursor:pointer;color:var(--tx);
+      box-shadow:var(--sh2);transition:box-shadow .15s;font-family:inherit;
+    }
+    .google-btn:hover{box-shadow:0 6px 24px rgba(0,0,0,.16)}
+
+    .notice-box{
+      background:#fef3c7;border:1.5px solid #fcd34d;border-radius:13px;
+      padding:16px 18px;font-size:13px;color:#78350f;line-height:1.7;
+      max-width:360px;text-align:left;
+    }
+    .notice-box strong{display:block;font-size:14px;margin-bottom:4px}
+    .notice-box code{background:#fde68a;padding:1px 5px;border-radius:4px;font-size:12px}
+    .notice-box a{color:var(--pri);font-weight:600}
+
+    /* ───────── COLOR PICKER ───────── */
+    .color-row{display:flex;gap:9px;flex-wrap:wrap}
+    .c-dot{
+      width:30px;height:30px;border-radius:50%;cursor:pointer;
+      border:3px solid transparent;transition:transform .13s,border-color .13s;
+    }
+    .c-dot.s{transform:scale(1.15)}
+
+    /* ───────── EMPTY STATE ───────── */
+    .empty{text-align:center;padding:60px 20px;color:var(--tx2)}
+    .empty-emoji{font-size:44px;margin-bottom:14px}
+    .empty p{font-size:15px}
+
+    /* ───────── MORE LINK ───────── */
+    .more-link{
+      text-align:center;padding:10px;font-size:13px;color:var(--tx2);
+      cursor:pointer;border-radius:10px;transition:background .12s;
+    }
+    .more-link:hover{background:var(--bg)}
+
+    /* ───────── RESPONSIVE ───────── */
+    @media(max-width:640px){
+      .sidebar{display:none}
+      .bnav{display:block}
+      .topbar{padding:16px 16px 0}
+      .filter-row{padding:10px 16px 0}
+      .todo-list{padding:10px 16px 100px}
+      .fab{bottom:calc(env(safe-area-inset-bottom) + 66px);right:16px}
+    }
+  </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<script>
+/* ============================================================
+   ⚙️  FIREBASE 설정 — 아래에 본인 Firebase 설정을 붙여넣으세요
+   https://console.firebase.google.com 에서 프로젝트 생성 후
+   프로젝트 설정 > 앱 추가 > 웹 에서 확인 가능합니다
+   ============================================================ */
+const FB_CFG = {
+  apiKey:            "AIzaSyAfn5fWAVbxpo10rLIVnZwQQRyS7r1HbgU",
+  authDomain:        "minzz-todo.firebaseapp.com",
+  projectId:         "minzz-todo",
+  storageBucket:     "minzz-todo.firebasestorage.app",
+  messagingSenderId: "11043585677",
+  appId:             "1:11043585677:web:402102d5d541e529566cc4"
+};
+/* ============================================================ */
+
+// ──────── 상수 & 상태 ────────
+const CONFIGURED = !FB_CFG.apiKey.includes("YOUR_");
+const COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+const DEFAULT_CATS = [
+  {id:'work', name:'업무', color:'#4f46e5'},
+  {id:'personal', name:'개인', color:'#10b981'},
+  {id:'health', name:'건강', color:'#f59e0b'},
+];
+
+let S = {
+  user: null,
+  todos: [],
+  cats: [...DEFAULT_CATS],
+  view: 'today',     // today | week | month | all | cat_xxx
+  priFilter: 'all',
+  q: '',
+  showDone: false,
+};
+
+let db, auth, unsub;
+
+// ──────── 날짜 헬퍼 ────────
+const startOf = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+const now = () => new Date();
+const todayStart = () => startOf(now());
+const todayEnd = () => { const d=todayStart(); d.setHours(23,59,59,999); return d; };
+const weekEnd = () => {
+  const d=todayStart(), day=d.getDay(), diff=day===0?0:7-day;
+  d.setDate(d.getDate()+diff); d.setHours(23,59,59,999); return d;
+};
+const monthEnd = () => {
+  const d=new Date(); d.setMonth(d.getMonth()+1,0); d.setHours(23,59,59,999); return d;
+};
+const todayStr = () => now().toISOString().split('T')[0];
+const tsToDate = ts => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+
+function fmtDate(ts) {
+  const d = tsToDate(ts);
+  if (!d) return null;
+  const t = todayStart();
+  const diff = Math.floor((d - t) / 86400000);
+  if (diff < 0)  return { txt: `${-diff}일 전 마감`, cls: 'over' };
+  if (diff === 0) return { txt: '오늘 마감', cls: 'tod' };
+  if (diff === 1) return { txt: '내일', cls: '' };
+  if (diff < 7)  return { txt: d.toLocaleDateString('ko-KR',{weekday:'short'})+' 마감', cls:'' };
+  return { txt: d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'}), cls:'' };
+}
+
+// ──────── Firebase 초기화 ────────
+function initFB() {
+  if (!CONFIGURED) { render(); return; }
+  firebase.initializeApp(FB_CFG);
+  db = firebase.firestore();
+  auth = firebase.auth();
+  auth.onAuthStateChanged(u => {
+    S.user = u;
+    if (u) loadData(); else render();
+  });
+}
+
+function signIn() {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert(e.message));
+}
+
+function signOut() {
+  if (unsub) unsub();
+  auth.signOut();
+}
+
+function loadData() {
+  const uid = S.user.uid;
+  db.collection(`u/${uid}/cats`).get().then(snap => {
+    if (!snap.empty) S.cats = snap.docs.map(d => ({id:d.id,...d.data()}));
+    render();
+  });
+  if (unsub) unsub();
+  unsub = db.collection(`u/${uid}/todos`)
+    .orderBy('createdAt','desc')
+    .onSnapshot(snap => {
+      S.todos = snap.docs.map(d => ({id:d.id,...d.data()}));
+      render();
+    });
+}
+
+async function saveTodo(t) {
+  const uid = S.user.uid;
+  const data = {
+    title:     t.title,
+    notes:     t.notes || '',
+    priority:  t.priority || 'med',
+    category:  t.category || null,
+    dueDate:   t.dueDate || null,
+    completed: t.completed ?? false,
+    createdAt: t.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  if (t.id) await db.doc(`u/${uid}/todos/${t.id}`).update(data);
+  else       await db.collection(`u/${uid}/todos`).add(data);
+}
+
+async function delTodo(id) {
+  await db.doc(`u/${S.user.uid}/todos/${id}`).delete();
+}
+
+async function toggleTodo(id) {
+  const t = S.todos.find(x => x.id === id);
+  if (!t) return;
+  await db.doc(`u/${S.user.uid}/todos/${id}`).update({completed: !t.completed});
+}
+
+async function saveCats() {
+  const uid = S.user.uid;
+  const batch = db.batch();
+  S.cats.forEach(c => batch.set(db.doc(`u/${uid}/cats/${c.id}`), {name:c.name, color:c.color}));
+  await batch.commit();
+}
+
+// ──────── 필터링 ────────
+function inView(todo, view) {
+  const d = tsToDate(todo.dueDate);
+  if (view === 'today') return d && d <= todayEnd();
+  if (view === 'week')  return d && d <= weekEnd();
+  if (view === 'month') return d && d <= monthEnd();
+  if (view.startsWith('cat_')) return todo.category === view.slice(4);
+  return true; // all
+}
+
+function getVisible() {
+  return S.todos.filter(t => {
+    if (!inView(t, S.view)) return false;
+    if (S.priFilter !== 'all' && t.priority !== S.priFilter) return false;
+    if (S.q && !t.title.toLowerCase().includes(S.q.toLowerCase())) return false;
+    return true;
+  });
+}
+
+function countView(view) {
+  return S.todos.filter(t => !t.completed && inView(t, view)).length;
+}
+
+// ──────── HTML Helpers ────────
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function priLabel(p) {
+  return p==='high'?'🔴 높음': p==='med'?'🟡 중간':'⚪ 낮음';
+}
+
+function priTagClass(p) {
+  return p==='high'?'tag-hi': p==='med'?'tag-md':'tag-lo';
+}
+
+// ──────── RENDER ────────
+function render() {
+  const app = document.getElementById('app');
+  if (!CONFIGURED) { app.innerHTML = renderSetup(); return; }
+  if (!S.user)     { app.innerHTML = renderLogin(); return; }
+  app.innerHTML = renderMain();
+  afterRender();
+}
+
+function renderSetup() {
+  return `<div class="center-screen">
+    <div class="cs-icon">✅</div>
+    <div class="cs-title">할일</div>
+    <div class="notice-box">
+      <strong>⚙️ Firebase 설정이 필요합니다</strong>
+      HTML 파일 상단의 <code>FB_CFG</code> 에<br>
+      본인의 Firebase 설정값을 붙여넣어 주세요.<br><br>
+      <a href="https://console.firebase.google.com" target="_blank">→ Firebase Console 열기</a>
+    </div>
+  </div>`;
+}
+
+function renderLogin() {
+  return `<div class="center-screen">
+    <div class="cs-icon">✅</div>
+    <div class="cs-title">할일</div>
+    <div class="cs-sub">Google 계정으로 로그인하면<br>모든 기기에서 자동 동기화됩니다</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6A7.8 7.8 0 0016.51 8z" fill="#4285F4"/>
+        <path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2A4.8 4.8 0 014.5 10.52H1.83v2.07A8 8 0 008.98 17z" fill="#34A853"/>
+        <path d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z" fill="#FBBC05"/>
+        <path d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z" fill="#EA4335"/>
+      </svg>
+      Google로 로그인
+    </button>
+  </div>`;
+}
+
+function renderMain() {
+  const viewMeta = {
+    today: {label:'오늘', icon:'📅'},
+    week:  {label:'이번 주', icon:'📆'},
+    month: {label:'이번 달', icon:'🗓️'},
+    all:   {label:'전체', icon:'📋'},
+  };
+
+  const title = S.view.startsWith('cat_')
+    ? (S.cats.find(c=>c.id===S.view.slice(4))?.name||'카테고리')
+    : (viewMeta[S.view]?.label||'할일');
+
+  const visible = getVisible();
+  const active  = visible.filter(t=>!t.completed);
+  const done    = visible.filter(t=>t.completed);
+
+  // ── sidebar nav ──
+  const navViews = ['today','week','month','all'].map(v => {
+    const n = countView(v);
+    return `<div class="nav-item${S.view===v?' active':''}" onclick="setView('${v}')">
+      <span class="nav-icon">${viewMeta[v].icon}</span>
+      <span>${viewMeta[v].label}</span>
+      ${n?`<span class="nb">${n}</span>`:''}
+    </div>`;
+  }).join('');
+
+  const navCats = S.cats.map(c => {
+    const v = 'cat_'+c.id, n = countView(v);
+    return `<div class="nav-item${S.view===v?' active':''}" onclick="setView('${v}')">
+      <span class="cat-dot" style="background:${c.color}"></span>
+      <span>${esc(c.name)}</span>
+      ${n?`<span class="nb">${n}</span>`:''}
+    </div>`;
+  }).join('');
+
+  // ── todo cards ──
+  const card = t => {
+    const cat = S.cats.find(c=>c.id===t.category);
+    const dt  = t.dueDate ? fmtDate(t.dueDate) : null;
+    const pc  = t.priority==='high'?'p-high':t.priority==='med'?'p-med':'p-low';
+    return `<div class="todo-card ${pc}${t.completed?' done':''}" onclick="openEdit('${t.id}')">
+      <div class="pbar"></div>
+      <div class="chk${t.completed?' on':''}" onclick="event.stopPropagation();toggleTodo('${t.id}')"></div>
+      <div class="card-body">
+        <div class="card-title">${esc(t.title)}</div>
+        <div class="card-meta">
+          ${cat ? `<span class="tag tag-cat">${esc(cat.name)}</span>` : ''}
+          <span class="tag ${priTagClass(t.priority)}">${priLabel(t.priority)}</span>
+          ${dt ? `<span class="tag-date ${dt.cls}">📅 ${dt.txt}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  };
+
+  const listHTML = (() => {
+    if (active.length===0 && done.length===0) {
+      return `<div class="empty">
+        <div class="empty-emoji">🎉</div>
+        <p>할일이 없습니다!</p>
+      </div>`;
+    }
+    let h = active.map(card).join('');
+    if (S.showDone && done.length) {
+      h += `<div class="sec-head">완료됨 (${done.length})<div class="sec-line"></div></div>`;
+      h += done.map(card).join('');
+    } else if (!S.showDone && done.length) {
+      h += `<div class="more-link" onclick="S.showDone=true;render()">완료된 항목 ${done.length}개 보기 ▾</div>`;
+    }
+    return h;
+  })();
+
+  // ── category modal options ──
+  const catOpts = state => S.cats.map(c =>
+    `<div class="nav-item" onclick="setView('cat_${c.id}');closeM('catMenu'${state?';render()':''})">
+      <span class="cat-dot" style="background:${c.color}"></span>
+      <span>${esc(c.name)}</span>
+    </div>`
+  ).join('');
+
+  // ── sheet: add/edit todo ──
+  const catSelOpts = S.cats.map(c =>
+    `<span class="cat-opt" data-c="${c.id}" onclick="selCat('${c.id}')">${esc(c.name)}</span>`
+  ).join('');
+
+  // ── color dots for category modal ──
+  const colorDots = COLORS.map(col =>
+    `<div class="c-dot" data-col="${col}" style="background:${col}" onclick="selColor('${col}')"></div>`
+  ).join('');
+
+  return `
+  <div id="app-inner">
+  <div id="app" style="display:flex;height:100dvh">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-head">
+        <div class="sb-logo">✅ 할일</div>
+      </div>
+      <div style="padding:0 10px 8px">
+        <div class="user-card">
+          <div class="u-avatar">${S.user.displayName?.[0]||'U'}</div>
+          <div class="u-name">${esc(S.user.displayName||S.user.email||'')}</div>
+          <button class="u-out" onclick="signOut()">로그아웃</button>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">보기</div>
+        ${navViews}
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">카테고리</div>
+        ${navCats}
+        <button class="add-cat-btn" onclick="openM('catAdd')">＋ 카테고리 추가</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="tb-title">${title}</div>
+        <div class="tb-date">${now().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>
+        <div class="search-wrap">
+          <span>🔍</span>
+          <input type="text" placeholder="검색..." value="${esc(S.q)}" oninput="S.q=this.value;renderList()">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <span class="chip${S.priFilter==='all'?' on':''}" onclick="setPri('all')">전체</span>
+        <span class="chip${S.priFilter==='high'?' on':''}" onclick="setPri('high')">🔴 높음</span>
+        <span class="chip${S.priFilter==='med'?' on':''}" onclick="setPri('med')">🟡 중간</span>
+        <span class="chip${S.priFilter==='low'?' on':''}" onclick="setPri('low')">⚪ 낮음</span>
+      </div>
+
+      <div class="todo-list" id="todo-list">${listHTML}</div>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openAdd()">＋</button>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <div class="bnav-inner">
+      ${['today','week','month','all'].map(v=>`
+        <div class="bn${S.view===v?' on':''}" onclick="setView('${v}')">
+          <span class="bn-icon">${viewMeta[v].icon}</span>${viewMeta[v].label}
+        </div>`).join('')}
+      <div class="bn" onclick="openM('catMenu')">
+        <span class="bn-icon">🏷️</span>분류
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Modal: Add/Edit Todo ── -->
+  <div class="overlay" id="todoM">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="mTitle">새 할일</div>
+
+      <div class="field">
+        <label>제목 *</label>
+        <input class="inp" id="mTitle_" type="text" placeholder="무엇을 해야 하나요?" maxlength="120">
+      </div>
+      <div class="field">
+        <label>메모</label>
+        <textarea class="inp ta" id="mNotes" placeholder="추가 메모..."></textarea>
+      </div>
+      <div class="field">
+        <label>우선순위</label>
+        <div class="pri-row">
+          <div class="pri-opt" data-v="high" onclick="selPri('high')">🔴 높음</div>
+          <div class="pri-opt" data-v="med"  onclick="selPri('med')">🟡 중간</div>
+          <div class="pri-opt" data-v="low"  onclick="selPri('low')">⚪ 낮음</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>카테고리</label>
+        <div class="cat-row" id="catRow">
+          <span class="cat-opt s" data-c="" onclick="selCat('')">없음</span>
+          ${catSelOpts}
+        </div>
+      </div>
+      <div class="field">
+        <label>마감일</label>
+        <input class="inp" id="mDue" type="date">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="closeM('todoM')">취소</button>
+        <button class="btn btn-d" id="mDel" style="display:none" onclick="doDelete()">삭제</button>
+        <button class="btn btn-p" onclick="doSave()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add Category ── -->
+  <div class="overlay" id="catAdd">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">카테고리 추가</div>
+      <div class="field">
+        <label>이름</label>
+        <input class="inp" id="catName" type="text" placeholder="카테고리 이름" maxlength="20">
+      </div>
+      <div class="field">
+        <label>색상</label>
+        <div class="color-row" id="colorRow">${colorDots}</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="closeM('catAdd')">취소</button>
+        <button class="btn btn-p" onclick="doAddCat()">추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Category Menu (mobile) ── -->
+  <div class="overlay" id="catMenu">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">카테고리</div>
+      ${catOpts(true)}
+      <button class="add-cat-btn" onclick="closeM('catMenu');setTimeout(()=>openM('catAdd'),300)">＋ 카테고리 추가</button>
+      <div class="btn-row"><button class="btn btn-s" onclick="closeM('catMenu')">닫기</button></div>
+    </div>
+  </div>
+
+  </div>`;
+}
+
+// ──────── after render (init modal states) ────────
+let MS = { id:null, pri:'med', cat:'', color:'#4f46e5' };
+
+function afterRender() {
+  // init color picker
+  const first = document.querySelector('.c-dot');
+  if (first) { MS.color = '#4f46e5'; first.classList.add('s'); }
+  // restore modal state if reopened
+  if (MS.pri) {
+    document.querySelector(`.pri-opt[data-v="${MS.pri}"]`)?.classList.add('s');
+  }
+  const catEl = document.querySelector(`.cat-opt[data-c="${MS.cat}"]`);
+  if (catEl) {
+    document.querySelectorAll('.cat-opt').forEach(e=>e.classList.remove('s'));
+    catEl.classList.add('s');
+  }
+}
+
+// ──────── Modal Control ────────
+function openM(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  el.addEventListener('click', e=>{ if(e.target===el) closeM(id); }, {once:true});
+}
+
+function closeM(id) {
+  document.getElementById(id)?.classList.remove('open');
+}
+
+function openAdd() {
+  MS = {id:null, pri:'med', cat:'', color:'#4f46e5'};
+  document.getElementById('mTitle').textContent = '새 할일';
+  document.getElementById('mTitle_').value = '';
+  document.getElementById('mNotes').value = '';
+  document.getElementById('mDue').value = todayStr();
+  document.getElementById('mDel').style.display = 'none';
+  document.querySelectorAll('.pri-opt').forEach(e=>e.classList.toggle('s',e.dataset.v==='med'));
+  document.querySelectorAll('.cat-opt').forEach(e=>e.classList.toggle('s',e.dataset.c===''));
+  openM('todoM');
+  setTimeout(()=>document.getElementById('mTitle_').focus(), 320);
+}
+
+function openEdit(id) {
+  const t = S.todos.find(x=>x.id===id);
+  if (!t) return;
+  MS = {id, pri:t.priority||'med', cat:t.category||'', color:'#4f46e5'};
+  document.getElementById('mTitle').textContent = '할일 수정';
+  document.getElementById('mTitle_').value = t.title;
+  document.getElementById('mNotes').value = t.notes||'';
+  const d = tsToDate(t.dueDate);
+  document.getElementById('mDue').value = d ? d.toISOString().split('T')[0] : '';
+  document.getElementById('mDel').style.display = 'block';
+  document.querySelectorAll('.pri-opt').forEach(e=>e.classList.toggle('s',e.dataset.v===MS.pri));
+  document.querySelectorAll('.cat-opt').forEach(e=>e.classList.toggle('s',e.dataset.c===MS.cat));
+  openM('todoM');
+}
+
+function selPri(p) {
+  MS.pri = p;
+  document.querySelectorAll('.pri-opt').forEach(e=>e.classList.toggle('s',e.dataset.v===p));
+}
+
+function selCat(c) {
+  MS.cat = c;
+  document.querySelectorAll('.cat-opt').forEach(e=>e.classList.toggle('s',e.dataset.c===c));
+}
+
+function selColor(col) {
+  MS.color = col;
+  document.querySelectorAll('.c-dot').forEach(e=>{
+    e.classList.toggle('s', e.dataset.col===col);
+    e.style.borderColor = e.dataset.col===col ? col : 'transparent';
+  });
+}
+
+async function doSave() {
+  const title = document.getElementById('mTitle_').value.trim();
+  if (!title) { document.getElementById('mTitle_').focus(); return; }
+  const dv = document.getElementById('mDue').value;
+  let dueDate = null;
+  if (dv) dueDate = firebase.firestore.Timestamp.fromDate(new Date(dv+'T23:59:59'));
+  await saveTodo({
+    id: MS.id,
+    title,
+    notes: document.getElementById('mNotes').value.trim(),
+    priority: MS.pri,
+    category: MS.cat||null,
+    dueDate,
+  });
+  closeM('todoM');
+}
+
+async function doDelete() {
+  if (!MS.id) return;
+  if (!confirm('정말 삭제하시겠어요?')) return;
+  await delTodo(MS.id);
+  closeM('todoM');
+}
+
+async function doAddCat() {
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { document.getElementById('catName').focus(); return; }
+  S.cats.push({id:'c'+Date.now(), name, color:MS.color});
+  await saveCats();
+  closeM('catAdd');
+  render();
+}
+
+// ──────── State Actions ────────
+function setView(v) { S.view=v; S.showDone=false; render(); }
+function setPri(p) { S.priFilter=p; renderList(); }
+
+function renderList() {
+  const el = document.getElementById('todo-list');
+  if (!el) { render(); return; }
+  // Re-run full render for simplicity (data is in-memory)
+  render();
+}
+
+// ──────── Boot ────────
+initFB();
+</script>
+</body>
+</html>
